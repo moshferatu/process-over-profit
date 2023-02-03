@@ -22,7 +22,7 @@ async def boot(context, message_link):
   
   checked_in_members = set()
   for reaction in message.reactions:
-    checked_in_members.update([await reaction.users().flatten()])
+    checked_in_members.update([member async for member in reaction.users()])
   # This returns the users from every server the bot is in.
   # Ideally, this would only return the users in the current server.
   # Since the bot is only running on one server for now, leaving as is.
