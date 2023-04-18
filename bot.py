@@ -1,5 +1,7 @@
 import os
+import requests
 
+from datetime import datetime
 from discord import Intents
 from discord.ext.commands import Bot
 
@@ -34,6 +36,40 @@ async def boot(context, message_link):
   members_to_boot = members_to_boot - bots
 
   await context.send('Members to boot: ' + str([member.name for member in members_to_boot]))
+
+news_url = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
+
+def parse_date(date_str):
+    return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S%z")
+
+@bot.command()
+async def news(context):
+  now = datetime.now()
+  news_response = requests.get(news_url)
+  if news_response.status_code == 200:
+      this_weeks_news_events = news_response.json()
+      todays_news_events = [event for event in this_weeks_news_events
+                            if parse_date(event['date']).date() == now.date()
+                            and event['country'] == 'USD']
+      if not todays_news_events:
+         await context.send('No news for ' + now.strftime('%B %d'))
+         return
+      news_events_by_time = dict()
+      for news_event in todays_news_events:
+          news_time = parse_date(news_event['date']).strftime('%I:%M %p ET')
+          news_title = news_event['title']
+          if news_time not in news_events_by_time:
+              news_events_by_time[news_time] = list()
+          news_events_by_time[news_time].append(news_title)
+      # TODO: Only return news events that haven't occurred yet.
+      news_result = '**News for ' + now.strftime('%B %d') + '**'
+      for news_time in news_events_by_time.keys():
+          news_result += '\n\n**{time}**\n'.format(time = news_time)
+          for news_event in news_events_by_time[news_time]:
+              news_result += '\n{event}'.format(event = news_event)
+      await context.send(news_result)
+  else:
+      await context.send('Error fetching news for ' + now.strftime('%B %d'))
 
 # Bot token needs to be added to environment variables when running.
 bot.run(os.environ['DISCORD_BOT_TOKEN'])
