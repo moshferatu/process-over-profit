@@ -14,6 +14,10 @@ bot = Bot(intents=intents, command_prefix='!')
 async def test(context):
   await context.send('Test was successful!')
 
+def batch_members(members, batch_size):
+  for i in range(0, len(members), batch_size):
+    yield members[i:i + batch_size]
+
 @bot.command()
 async def boot(context, message_link):
   message_link_components = message_link.split('/')
@@ -35,7 +39,13 @@ async def boot(context, message_link):
   bots = set(member for member in all_members if member.bot)
   members_to_boot = members_to_boot - bots
 
-  await context.send('Members to boot: ' + str([member.name for member in members_to_boot]))
+  sorted_members_to_boot = sorted(members_to_boot, key=lambda member: member.display_name.lower())
+
+  # TODO: Handle scenario where there are no members to boot.
+  # Send multiple messages, if necessary, in order to avoid Discord API message length limit.
+  for member_batch in batch_members(sorted_members_to_boot, 50):
+    member_mentions = ', '.join([member.mention for member in member_batch])
+    await context.send(member_mentions)
 
 news_url = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
 
