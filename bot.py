@@ -47,6 +47,7 @@ async def boot(context, message_link):
     member_mentions = ', '.join([member.mention for member in member_batch])
     await context.send(member_mentions)
 
+# Forex Factory news calendar.
 news_url = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
 
 def parse_date(date_str):
@@ -72,11 +73,11 @@ async def news(context):
               news_events_by_time[news_time] = list()
           news_events_by_time[news_time].append(news_title)
       # TODO: Only return news events that haven't occurred yet.
-      news_result = '**News for ' + now.strftime('%B %d') + '**'
+      news_result = '# News for ' + now.strftime('%B %d')
       for news_time in news_events_by_time.keys():
-          news_result += '\n\n**{time}**\n'.format(time = news_time)
+          news_result += '\n## {time}'.format(time = news_time)
           for news_event in news_events_by_time[news_time]:
-              news_result += '\n{event}'.format(event = news_event)
+              news_result += '\n* {event}'.format(event = news_event)
       await context.send(news_result)
   else:
       await context.send('Error fetching news for ' + now.strftime('%B %d'))
